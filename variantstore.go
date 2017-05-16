@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -41,6 +40,14 @@ type Variant struct {
 	NHet int64 `json:"nHet"`
 }
 
+type VariantQuery struct {
+	Chrom string
+	Start int
+	End int
+	Lim int
+	Skip int
+}
+
 func main() {
 	var dsn string
 	flag.StringVar(&dsn, "d", "root:root@tcp(127.0.0.1:3306)/v", "mysql dsn: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]")
@@ -61,7 +68,6 @@ func main() {
 	r.Methods("GET, OPTIONS")
 	r.HandleFunc("/", Index(r))
 	r.HandleFunc("/variants", VariantsIndex(db))
-	r.HandleFunc("/variants/{variantId}", VariantsShow)
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
@@ -84,119 +90,134 @@ func Index(router *mux.Router) http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
-func errorResponse(response *VariantResponse, err string) {
-	response.Success = false
-	response.Error = fmt.Sprintf("Errors: %s", err)
-}
-
 func VariantsIndex(db *sql.DB) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		errs := make([]string, 0)
-		trackErrors := func(err error) {
-			if err != nil {
-				errs = append(errs, err.Error())
-			}
-		}
-
-		params := r.URL.Query()
-		c, err := getParamValue(params, "chromosome")
-		trackErrors(err)
-		start, err := parseInt(params, "positionStart")
-		trackErrors(err)
-		end, err := parseInt(params, "positionEnd")
-		trackErrors(err)
-		lim, err := parseInt(params, "limit")
-		if err != nil {
-			lim = 500
-		}
-		skip, err := parseInt(params, "skip")
-		if err != nil {
-			skip = 0
-		}
-
 		response := VariantResponse{true, []Variant{}, []int{}, ""}
-
-		if len(errs) > 0 {
-			errorResponse(&response, strings.Join(errs, ", "))
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
-		count := "SELECT COUNT(*) AS size FROM vs where chromosome=? and start<=? and start>=?"
-		rows, err := db.Query(count, c, end, start)
-		if err != nil {
-			errorResponse(&response, err.Error())
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-		defer rows.Close()
-		n := 0
-		for rows.Next() {
-			if err := rows.Scan(&n); err != nil {
-				errorResponse(&response, err.Error())
-				json.NewEncoder(w).Encode(response)
-				return
-			}
-		}
-		if err := rows.Err(); err != nil || n <= 0 {
-			errorResponse(&response, err.Error())
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
-		query := "SELECT * FROM vs where chromosome=? and start<=? and start>=? LIMIT ?, ?"
-
-		variants, err := db.Query(query, c, end, start, skip, lim)
+		vq, err := parse(r.URL.Query())
 		if err != nil {
 			errorResponse(&response, err.Error())
 			json.NewEncoder(w).Encode(response)
 			return
 		}
 
-		vs := make([]Variant, n)
-		i := 0
-		for variants.Next() {
-			var v Variant
-			var ignored []byte
-			if err := variants.Scan(&v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.CallRate, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored); err != nil {
-				errorResponse(&response, err.Error())
-				json.NewEncoder(w).Encode(response)
-				return
-			}
-			vs[i] = v
-			i++
-		}
-		if err := variants.Err(); err != nil || n <= 0 {
+		count, err := countVariants(db, vq)
+		if err != nil {
 			errorResponse(&response, err.Error())
 			json.NewEncoder(w).Encode(response)
 			return
 		}
-		response.Total = []int{n}
+		vs, err := queryVariants(db, vq, count)
+		response.Total = []int{count}
 		response.Variants = vs
 		json.NewEncoder(w).Encode(response)
 	}
 	return http.HandlerFunc(fn)
 }
 
-func VariantsShow(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	variantId := vars["variantId"]
-	fmt.Fprintln(w, "variant:", variantId)
+func parse (params url.Values) (VariantQuery, error) {
+	errs := make([]string, 0)
+	trackErrors := func(err error) {
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+
+	c, err := paramValue(params, "chromosome")
+	trackErrors(err)
+	start, err := parseNatural(params, "positionStart")
+	trackErrors(err)
+	end, err := parseNatural(params, "positionEnd")
+	trackErrors(err)
+	lim, err := parseNatural(params, "limit")
+	if err != nil {
+		lim = 500
+	}
+	skip, err := parseNatural(params, "skip")
+	if err != nil {
+		skip = 0
+	}
+
+	if len(errs) > 0 {
+		return VariantQuery{}, errors.New(strings.Join(errs, ", "))
+	}
+	return VariantQuery{c, start, end, lim, skip}, nil
 }
 
-func getParamValue(params url.Values, s string) (string, error) {
+func countVariants(db *sql.DB, vq VariantQuery) (int, error) {
+	count := "SELECT COUNT(*) AS size FROM vs where chromosome=? and start<=? and start>=?"
+	rows, err := db.Query(count, vq.Chrom, vq.End, vq.Start)
+	if err != nil {
+		return -1, err
+	}
+	defer rows.Close()
+	n := 0
+	for rows.Next() {
+		if err := rows.Scan(&n); err != nil {
+			return -1, err
+		}
+	}
+	if err := rows.Err(); err != nil || n <= 0 {
+		return -1, err
+	}
+	return n, nil
+}
+
+func queryVariants(db *sql.DB, vq VariantQuery, count int) ([]Variant, error) {
+	query := "SELECT * FROM vs where chromosome=? and start<=? and start>=? LIMIT ?, ?"
+	variants, err := db.Query(query, vq.Chrom, vq.End, vq.Start, vq.Skip, vq.Lim)
+	if err != nil {
+		return nil, err
+	}
+	var size = count - vq.Skip
+	if size < 0 {
+		size = 0
+	}
+	if size > vq.Lim {
+		size = vq.Lim
+	}
+	vs := make([]Variant, size)
+	i := 0
+	for variants.Next() {
+		var v Variant
+		var ignored []byte
+		if err := variants.Scan(&v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.CallRate, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored); err != nil {
+			return nil, err
+		}
+		vs[i] = v
+		i++
+	}
+	if err := variants.Err(); err != nil {
+		return nil, err
+	}
+	return vs, nil
+}
+
+func errorResponse(response *VariantResponse, err string) {
+	response.Success = false
+	response.Error = fmt.Sprintf("Errors: %s", err)
+}
+
+func paramValue(params url.Values, s string) (string, error) {
 	if len(params) <= 0 || len(params[s]) <= 0 {
 		return "", errors.New(fmt.Sprintf("Could not parse %s", s))
 	}
 	return params[s][0], nil
 }
 
-func parseInt(params url.Values, s string) (int, error) {
-	vs, err := getParamValue(params, s)
+func parseNatural(params url.Values, s string) (int, error) {
+	v, err := paramValue(params, s)
 	if err != nil {
 		return -1, err
 	}
-	return strconv.Atoi(vs)
+	vi, err := strconv.Atoi(v)
+	if err != nil {
+		return -1, err
+	}
+
+	if vi < 0 {
+		return -1, errors.New(fmt.Sprintf("%s is less than 0", s))
+	}
+	return vi, nil
 }
 
 func check(err error) {
