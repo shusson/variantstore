@@ -14,29 +14,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const mysqlURL string = "root:a@tcp(sql:3306)/v"
-
-
 func main() {
+	var dsn string
+	flag.StringVar(&dsn, "d", "root:root@tcp(127.0.0.1:3306)/v", "mysql dsn: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]")
+
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
+	db, err := sql.Open("mysql", dsn)
+	check(err)
+	defer db.Close()
+	err = db.Ping()
+	check(err)
+
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", Index(r))
-	r.HandleFunc("/variants", VariantsIndex)
+	r.HandleFunc("/variants", VariantsIndex(db))
 	r.HandleFunc("/variants/{variantId}", VariantsShow)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
-
-
-	//db, err := sql.Open("mysql", mysqlURL)
-	//check(err)
-	//defer db.Close()
-	//err = db.Ping()
-	//check(err)
 }
 
 func Index(router *mux.Router) http.HandlerFunc {
@@ -54,8 +53,11 @@ func Index(router *mux.Router) http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
-func VariantsIndex(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "VARIANTS!")
+func VariantsIndex(db *sql.DB) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "VARIANTS!")
+	}
+	return http.HandlerFunc(fn)
 }
 
 func VariantsShow(w http.ResponseWriter, r *http.Request) {
