@@ -6,18 +6,29 @@ Connects to a mysql server loaded with variant information.
 ### Deployment
 
 Containerized App available at:
-https://hub.docker.com/r/shusson/variantstore/
+https://hub.docker.com/r/shusson/variantstore
 
-#### Example setup
+#### Example deployment using docker-compose
+
+Currently options like, where the data is loaded from, are hardcoded into the docker-compose file
+
 Start mysql server
 ```bash
-docker run -v `pwd`:/data --name sql -e MYSQL_ROOT_PASSWORD=a -d mysql:5.7.18 --secure-file-priv=/data
+docker-compose up -d sql
 ```
 
-Init and load data into mysql server... (currently a manual process)
-
-Start variant store api and link it to the sql server
+Optional - Load data
 ```bash
-docker run -it -d --link sql:sql -p 8080:8080 --name vs shusson/variantstore -d 'root:password@tcp(sql:port)/db'
+docker-compose up load
 ```
 
+Start the api server
+```bash
+docker-compose -d up api
+```
+
+#### Backing up sql data
+
+```bash
+docker run --rm -v dockervs_data-volume:/tmp -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /tmp
+```
