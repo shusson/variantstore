@@ -2,20 +2,20 @@ version: '2'
 services:
   db:
     image: mysql:5.7.18
-    environment:
-    - MYSQL_ROOT_PASSWORD=a
+    env_file:
+        - .env
     volumes:
-      - ./data:/data
+      - ${VOLUME}:/data
       - data-volume:/var/lib/mysql
     command: ["mysqld", "--secure-file-priv=/data"]
   load:
     image: shusson/variantloader:1.0
-    entrypoint: 'go-wrapper run -c -d "root:a@tcp(db:3306)/"'
+    entrypoint: 'go-wrapper run -c -d "${MYSQL_ROOT_USER}:${MYSQL_ROOT_PASSWORD}@tcp(db:${MYSQL_ROOT_PORT})/" -f ${DATAFILE}'
   api:
     image: shusson/variantstore:1.0
     ports:
       - "8080:8080"
-    entrypoint: 'go-wrapper run -d "root:a@tcp(db:3306)/v"'
+    entrypoint: 'go-wrapper run -d "${MYSQL_ROOT_USER}:${MYSQL_ROOT_PASSWORD}@tcp(db:${MYSQL_ROOT_PORT})/v"'
 
 volumes:
   data-volume:

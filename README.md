@@ -10,7 +10,7 @@ https://hub.docker.com/r/shusson/variantstore
 
 #### Example deployment using docker-compose
 
-Currently options like, where the data is loaded from, are hardcoded into the docker-compose file
+See [docker/.env](docker/.env) for deployment environment configuration
 
 Start mysql server
 ```bash
