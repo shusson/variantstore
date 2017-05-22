@@ -26,18 +26,23 @@ type VariantResponse struct {
 }
 
 type Variant struct {
+	VariantId  string `json:"id"`
 	Chromosome string `json:"chromosome"`
 	Start int64 `json:"start"`
 	Reference string `json:"reference"`
 	Alternate string `json:"alternate"`
 	DbSNP string `json:"dbSNP"`
-	CallRate float64 `json:"callRate"`
 	AC int64 `json:"AC"`
-	AF float64 `json:"AF"`
+	AF JsonNullFloat64 `json:"AF"`
 	NCalled int64 `json:"nCalled"`
 	NNotCalled int64 `json:"nNotCalled"`
 	NHomRef int64 `json:"nHomRef"`
 	NHet int64 `json:"nHet"`
+	NHomVar int64 `json:"nHet"`
+	AltType string `json:"altType"`
+	Consequence string `json:"consequence"`
+	GeneMapping string `json:"geneMapping"`
+	EXACMAF JsonNullString `json:"exacMAF"`
 }
 
 type VariantQuery struct {
@@ -114,6 +119,11 @@ func VariantsIndex(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		vs, err := queryVariants(db, vq, count)
+		if err != nil {
+			errorResponse(&response, err.Error())
+			json.NewEncoder(w).Encode(response)
+			return
+		}
 		response.Total = []int{count}
 		response.Variants = vs
 		json.NewEncoder(w).Encode(response)
@@ -186,8 +196,8 @@ func queryVariants(db *sql.DB, vq VariantQuery, count int) ([]Variant, error) {
 	i := 0
 	for variants.Next() {
 		var v Variant
-		var ignored []byte
-		if err := variants.Scan(&v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.CallRate, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored, &ignored); err != nil {
+		//var ignored []byte
+		if err := variants.Scan(&v.VariantId, &v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &v.NHomVar, &v.AltType, &v.Consequence, &v.GeneMapping, &v.EXACMAF); err != nil {
 			return nil, err
 		}
 		vs[i] = v
@@ -232,4 +242,28 @@ func check(err error) {
 		return
 	}
 	panic(err)
+}
+
+type JsonNullFloat64 struct {
+	sql.NullFloat64
+}
+
+type JsonNullString struct {
+	sql.NullString
+}
+
+func (v JsonNullFloat64) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.Float64)
+	} else {
+		return json.Marshal(nil)
+	}
+}
+
+func (v JsonNullString) MarshalJSON() ([]byte, error) {
+	if v.Valid {
+		return json.Marshal(v.String)
+	} else {
+		return json.Marshal(nil)
+	}
 }
