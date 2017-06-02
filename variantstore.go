@@ -38,7 +38,7 @@ type Variant struct {
 	NNotCalled int64 `json:"nNotCalled"`
 	NHomRef int64 `json:"nHomRef"`
 	NHet int64 `json:"nHet"`
-	NHomVar int64 `json:"nHet"`
+	NHomVar int64 `json:"nHomVar"`
 	AltType string `json:"altType"`
 	Consequence string `json:"consequence"`
 	GeneMapping string `json:"geneMapping"`
