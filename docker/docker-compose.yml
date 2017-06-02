@@ -9,10 +9,10 @@ services:
       - data-volume:/var/lib/mysql
     command: ["mysqld", "--secure-file-priv=/data"]
   load:
-    image: shusson/variantloader:1.0
+    image: shusson/variantloader:1.1
     entrypoint: 'go-wrapper run -c -d "${MYSQL_ROOT_USER}:${MYSQL_ROOT_PASSWORD}@tcp(db:${MYSQL_ROOT_PORT})/" -f ${DATAFILE}'
   api:
-    image: shusson/variantstore:1.0
+    image: shusson/variantstore:1.1
     ports:
       - "${API_PORT}:8080"
     entrypoint: 'go-wrapper run -d "${MYSQL_ROOT_USER}:${MYSQL_ROOT_PASSWORD}@tcp(db:${MYSQL_ROOT_PORT})/v"'

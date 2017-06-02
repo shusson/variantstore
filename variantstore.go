@@ -197,7 +197,7 @@ func queryVariants(db *sql.DB, vq VariantQuery, count int) ([]Variant, error) {
 	for variants.Next() {
 		var v Variant
 		//var ignored []byte
-		if err := variants.Scan(&v.VariantId, &v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &v.NHomVar, &v.AltType, &v.Consequence, &v.GeneMapping, &v.EXACMAF); err != nil {
+		if err := variants.Scan(&v.VariantId, &v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &v.NHomVar, &v.AltType); err != nil {
 			return nil, err
 		}
 		vs[i] = v

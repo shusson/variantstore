@@ -1,0 +1,13 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 60
+      arrivalRate: 100
+
+scenarios:
+  - flow:
+    - get:
+        url: "/variants?chromosome=2&positionStart=179390716&positionEnd=179695529&limit=1000&type=&refAllele=&altAllele=&count=true"
+
+# TTN
+#/variants?chromosome=2&positionStart=179390716&positionEnd=179695529&limit=500&type=&refAllele=&altAllele=&count=true
