@@ -10,7 +10,15 @@ https://hub.docker.com/r/shusson/variantstore
 
 #### Example deployment using docker-compose
 
-See [docker/.env](docker/.env) for deployment environment configuration
+See [docker/.env-example](docker/.env-example) for deployment environment configuration
+
+Take a copy .env-example, edit it and source it
+```bash
+cd docker
+cp .env-example .env
+vi .env
+source .env
+```
 
 Start mysql server
 ```bash
