@@ -1,5 +1,5 @@
 # variantstore
-Minimal variant store API layer (no samples or genotypes).
+Minimal variant store service (no samples or genotypes).
 
 Connects to a mysql server loaded with variant information.
 
