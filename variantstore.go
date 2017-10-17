@@ -32,18 +32,26 @@ type Variant struct {
 	Start int64 `json:"start"`
 	Reference string `json:"reference"`
 	Alternate string `json:"alternate"`
-	DbSNP string `json:"dbSNP"`
+	DbSNP JsonNullString `json:"dbSNP"`
 	AC int64 `json:"AC"`
 	AF JsonNullFloat64 `json:"AF"`
-	NCalled int64 `json:"nCalled"`
-	NNotCalled int64 `json:"nNotCalled"`
 	NHomRef int64 `json:"nHomRef"`
 	NHet int64 `json:"nHet"`
 	NHomVar int64 `json:"nHomVar"`
 	AltType string `json:"altType"`
-	Consequence string `json:"consequence"`
-	GeneMapping string `json:"geneMapping"`
-	EXACMAF JsonNullString `json:"exacMAF"`
+	CATO JsonNullFloat64 `json:"cato"`
+	Eigen JsonNullFloat64 `json:"eigen"`
+	Sift JsonNullString `json:"sift"`
+	HGVSc JsonNullString `json:"hgvsc"`
+	HGVSp JsonNullString `json:"hgvsp"`
+	PolyPhen JsonNullString `json:"polyphen"`
+	TgpAF JsonNullFloat64 `json:"tgpAF"`
+	HrcAF JsonNullFloat64 `json:"hrcAF"`
+	GnomadAF JsonNullFloat64 `json:"gnomadAF"`
+	Feature JsonNullString `json:"feature"`
+	Consequences JsonNullString `json:"consequences"`
+	Gene JsonNullString `json:"gene"`
+	Clinvar JsonNullString `json:"clinvar"`
 }
 
 type VariantQuery struct {
@@ -214,7 +222,31 @@ func queryVariants(db *sql.DB, vq VariantQuery, count int) ([]Variant, error) {
 	for variants.Next() {
 		var v Variant
 		//var ignored []byte
-		if err := variants.Scan(&v.VariantId, &v.Chromosome, &v.Start, &v.Reference, &v.Alternate, &v.DbSNP, &v.AC, &v.AF, &v.NCalled, &v.NNotCalled, &v.NHomRef, &v.NHet, &v.NHomVar, &v.AltType); err != nil {
+		if err := variants.Scan(&v.VariantId,
+								&v.Chromosome,
+								&v.Start,
+								&v.Reference,
+								&v.Alternate,
+								&v.DbSNP,
+								&v.AC,
+								&v.AF,
+								&v.NHomRef,
+								&v.NHet,
+								&v.NHomVar,
+								&v.AltType,
+								&v.CATO,
+								&v.Eigen,
+								&v.Sift,
+								&v.HGVSc,
+								&v.HGVSp,
+								&v.PolyPhen,
+								&v.TgpAF,
+								&v.HrcAF,
+								&v.GnomadAF,
+								&v.Feature,
+								&v.Consequences,
+								&v.Gene,
+								&v.Clinvar); err != nil {
 			return nil, err
 		}
 		vs[i] = v
