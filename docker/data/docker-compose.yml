@@ -1,0 +1,18 @@
+version: '2'
+services:
+  db:
+    image: mysql:5.7.18
+    env_file:
+      - .env
+    volumes:
+      - ${VOLUME}:/data
+      - ./db:/var/lib/mysql
+    command: ["mysqld", "--secure-file-priv=/data"]
+  load:
+    depends_on:
+      - db
+    volumes:
+      - ../data:/data
+    image: mysql:5.7.18
+    entrypoint: ["/bin/bash", "/data/load.sh"]
+

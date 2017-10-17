@@ -17,7 +17,7 @@
 
 .DS_Store
 
-data
+docker/data/db
 docker/.env
 docker/logs
 docker/apache/ssl/*
