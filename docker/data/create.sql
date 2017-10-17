@@ -1,7 +1,7 @@
 CREATE DATABASE variants;
 USE variants;
 
-CREATE TABLE mgrb (
+CREATE TABLE vs (
 		VARIANT TEXT,
 		CHROMOSOME VARCHAR(2),
 		START INT,
@@ -30,7 +30,7 @@ CREATE TABLE mgrb (
 		INDEX name (chromosome, start)
 	);
 
-LOAD DATA INFILE '/data/sample.tsv' INTO TABLE mgrb
+LOAD DATA INFILE '/data/mgrb.tsv' INTO TABLE vs
 				  FIELDS TERMINATED BY '\t'
 				  LINES TERMINATED BY '\n'
 				  IGNORE 1 LINES;

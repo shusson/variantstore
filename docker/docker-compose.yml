@@ -1,26 +1,21 @@
 version: '2'
 services:
-#  apache:
-#      restart: always
-#      build: apache
-#      ports:
-#        - "443:443"
-#      volumes:
-#        - ./logs:/usr/local/apache2/logs
   db:
     restart: always
     image: mysql:5.7.18
     ports:
-        - "3306:3306"
+      - "3306:3306"
     env_file:
-        - .env
+      - .env
     volumes:
       - ${VOLUME}:/data
       - ./data/db:/var/lib/mysql
     command: ["mysqld", "--secure-file-priv=/data"]
   api:
     depends_on:
-        - db
+      - db
     restart: always
+    ports:
+      - "8080:8080"
     image: shusson/variantstore:1.2
     entrypoint: 'go-wrapper run -d "${MYSQL_ROOT_USER}:${MYSQL_ROOT_PASSWORD}@tcp(db:${MYSQL_ROOT_PORT})/variants"'

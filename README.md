@@ -35,6 +35,11 @@ Start the api server
 docker-compose -d up api
 ```
 
+Start the apache server
+```bash
+docker-compose -d up apache
+```
+
 #### Backing up sql data
 
 ```bash
