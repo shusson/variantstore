@@ -16,6 +16,7 @@ import (
 	"errors"
 	"encoding/json"
 	"github.com/gorilla/handlers"
+	"time"
 )
 
 type VariantResponse struct {
@@ -56,7 +57,7 @@ type VariantQuery struct {
 func main() {
 	var dsn string
 	var connectionCheck bool
-	flag.StringVar(&dsn, "d", "root:root@tcp(127.0.0.1:3306)/v", "mysql dsn: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]")
+	flag.StringVar(&dsn, "d", "root:root@tcp(127.0.0.1:3306)/variants", "mysql dsn: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]")
 	flag.BoolVar(&connectionCheck, "u", false, "Connect to database and exit")
 
 	flag.Usage = func() {
@@ -68,11 +69,14 @@ func main() {
 	db, err := sql.Open("mysql", dsn)
 	check(err)
 	defer db.Close()
-	err = db.Ping()
+	err = retry(10, 3 * time.Second,
+		func() (error) {
+			log.Println("connecting to mysql server...")
+			return db.Ping()
+		})
 	check(err)
-
+	fmt.Println("Connected to mysql server")
 	if connectionCheck {
-		fmt.Println("Connected")
 		return
 	}
 
@@ -85,6 +89,19 @@ func main() {
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "OPTIONS"})
 	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(originsOk, headersOk, methodsOk)(r)))
+}
+
+func retry(attempts int, sleep time.Duration, action func() (error)) (error) {
+	var err error
+	for i := 0; i < attempts; i++ {
+		err = action()
+		if err == nil {
+			return err
+		}
+		time.Sleep(sleep)
+		log.Println("retrying after error: ", err)
+	}
+	return err
 }
 
 func Index(router *mux.Router) http.HandlerFunc {
