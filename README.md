@@ -20,24 +20,15 @@ vi .env
 source .env
 ```
 
-Start mysql server
+Start services
 ```bash
-docker-compose up -d sql
+docker-compose up -d
 ```
 
 Optional - Load data
 ```bash
-docker-compose up load
-```
-
-Start the api server
-```bash
-docker-compose -d up api
-```
-
-Start the apache server
-```bash
-docker-compose -d up apache
+cd data
+docker-compose up
 ```
 
 #### Backing up sql data

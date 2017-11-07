@@ -19,5 +19,6 @@
 
 docker/data/db
 docker/.env
+docker/data/.env
 docker/logs
 docker/apache/ssl/*
