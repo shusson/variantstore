@@ -42,16 +42,22 @@ type Variant struct {
 	CATO JsonNullFloat64 `json:"cato"`
 	Eigen JsonNullFloat64 `json:"eigen"`
 	Sift JsonNullString `json:"sift"`
-	HGVSc JsonNullString `json:"hgvsc"`
-	HGVSp JsonNullString `json:"hgvsp"`
 	PolyPhen JsonNullString `json:"polyphen"`
 	TgpAF JsonNullFloat64 `json:"tgpAF"`
 	HrcAF JsonNullFloat64 `json:"hrcAF"`
 	GnomadAF JsonNullFloat64 `json:"gnomadAF"`
-	Feature JsonNullString `json:"feature"`
+	GnomadAF_AFR JsonNullFloat64 `json:"gnomadAF_AFR"`
+	GnomadAF_AMR JsonNullFloat64 `json:"gnomadAF_AMR"`
+	GnomadAF_ASJ JsonNullFloat64 `json:"gnomadAF_ASJ"`
+	GnomadAF_EAS JsonNullFloat64 `json:"gnomadAF_EAS"`
+	GnomadAF_FIN JsonNullFloat64 `json:"gnomadAF_FIN"`
+	GnomadAF_NFE JsonNullFloat64 `json:"gnomadAF_NFE"`
+	GnomadAF_OTH JsonNullFloat64 `json:"gnomadAF_OTH"`
+	EnsemblId JsonNullString `json:"ensemblId"`
 	Consequences JsonNullString `json:"consequences"`
-	Gene JsonNullString `json:"gene"`
+	GeneSymbol JsonNullString `json:"geneSymbol"`
 	Clinvar JsonNullString `json:"clinvar"`
+	WasSplit JsonNullString `json:"wasSplit"`
 }
 
 type VariantQuery struct {
@@ -237,16 +243,22 @@ func queryVariants(db *sql.DB, vq VariantQuery, count int) ([]Variant, error) {
 								&v.CATO,
 								&v.Eigen,
 								&v.Sift,
-								&v.HGVSc,
-								&v.HGVSp,
 								&v.PolyPhen,
 								&v.TgpAF,
 								&v.HrcAF,
 								&v.GnomadAF,
-								&v.Feature,
+								&v.GnomadAF_AFR,
+								&v.GnomadAF_AMR,
+								&v.GnomadAF_ASJ,
+								&v.GnomadAF_EAS,
+								&v.GnomadAF_FIN,
+								&v.GnomadAF_NFE,
+								&v.GnomadAF_OTH,
+								&v.EnsemblId,
 								&v.Consequences,
-								&v.Gene,
-								&v.Clinvar); err != nil {
+								&v.GeneSymbol,
+								&v.Clinvar,
+								&v.WasSplit); err != nil {
 			return nil, err
 		}
 		vs[i] = v
