@@ -138,20 +138,20 @@ func VariantsIndex(db *sql.DB) http.HandlerFunc {
 		response := VariantResponse{true, []Variant{}, []int{}, ""}
 		vq, err := parse(r.URL.Query())
 		if err != nil {
-			errorResponse(&response, err.Error())
+			errorResponse(&response, "Parsing Error:" + err.Error())
 			json.NewEncoder(w).Encode(response)
 			return
 		}
 
 		count, err := countVariants(db, vq)
 		if err != nil {
-			errorResponse(&response, err.Error())
+			errorResponse(&response, "Count Error:" + err.Error())
 			json.NewEncoder(w).Encode(response)
 			return
 		}
 		vs, err := queryVariants(db, vq, count)
 		if err != nil {
-			errorResponse(&response, err.Error())
+			errorResponse(&response, "Query Error:" + err.Error())
 			json.NewEncoder(w).Encode(response)
 			return
 		}
@@ -216,6 +216,7 @@ func queryVariants(db *sql.DB, vq VariantQuery, count int) ([]Variant, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer variants.Close()
 	var size = count - vq.Skip
 	if size < 0 {
 		size = 0
