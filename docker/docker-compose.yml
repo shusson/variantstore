@@ -17,5 +17,5 @@ services:
     restart: always
     ports:
       - "8080:8080"
-    image: shusson/variantstore:1.4
+    image: shusson/variantstore:1.5
     entrypoint: 'go-wrapper run -d "${MYSQL_ROOT_USER}:${MYSQL_ROOT_PASSWORD}@tcp(db:${MYSQL_ROOT_PORT})/variants"'

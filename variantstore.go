@@ -90,6 +90,7 @@ func main() {
 		})
 	check(err)
 	fmt.Println("Connected to mysql server")
+	db.SetConnMaxLifetime(10 * time.Second)
 	if connectionCheck {
 		return
 	}
